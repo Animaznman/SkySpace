@@ -18,11 +18,11 @@ print(BUCKET_NAME)
 storage_client = storage.Client(project=PROJECT_ID)
 bucket = storage_client.bucket(BUCKET_NAME, user_project=PROJECT_ID)  # keep user_project even if RP off
 
-def flush_minute_to_gcs(minute_key: str, lines: list[str]):
+def flush_minute_to_gcs(minute_key: str, lines: list[str], did: str):
     """Upload all collected events for a minute as one JSONL object."""
     if not lines:
         return
-    blob_name = f"bsky/{minute_key}.jsonl"  # e.g., 20251103_2134.jsonl
+    blob_name = f"bsky/{did}/{minute_key}.jsonl"  # e.g., 20251103_2134.jsonl
     blob = bucket.blob(blob_name)
     payload = "\n".join(lines) + "\n"  # newline-terminate for JSONL
     blob.upload_from_string(payload, content_type="application/x-ndjson")
@@ -57,7 +57,7 @@ async def listen_to_websocket(duration_sec: int = 10 * 60):
                 if current_minute is None:
                     current_minute = now_minute
                 elif now_minute != current_minute:
-                    flush_minute_to_gcs(current_minute, buffer_lines)
+                    flush_minute_to_gcs(current_minute, buffer_lines, obj['did'])
                     buffer_lines = []
                     current_minute = now_minute
 
@@ -71,7 +71,7 @@ async def listen_to_websocket(duration_sec: int = 10 * 60):
                 print(f"Error: {e}")
 
     # Flush any remaining events for the last (possibly partial) minute
-    flush_minute_to_gcs(current_minute, buffer_lines)
+    flush_minute_to_gcs(current_minute, buffer_lines, obj['did'])
 
 if __name__ == "__main__":
-    asyncio.run(listen_to_websocket(duration_sec=60))  # set to 60s for quick test; bump as needed
+    asyncio.run(listen_to_websocket(duration_sec=30))  # set to 60s for quick test; bump as needed
