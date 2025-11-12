@@ -153,6 +153,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+/firehose_service/skeets
 
 # mypy
 .mypy_cache/
