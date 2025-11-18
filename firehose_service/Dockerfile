@@ -9,15 +9,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY firehose.py .
+COPY firehose_v3.py .
 
-COPY start_fire.sh /start_fire.sh
-RUN chmod +x /start_fire.sh
+COPY start_fire.sh .
+RUN chmod +x start_fire.sh
 
-ENV PYTHONBUFFERED=1
-ENV PYTHONPATH="/app:$PYTHONPATH"
-
-ENTRYPOINT ["/start_fire.sh"]
+ENTRYPOINT ["./start_fire.sh"]

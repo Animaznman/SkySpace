@@ -9,8 +9,8 @@ base_dir = "skeets"
 os.makedirs(base_dir, exist_ok=True)
 
 start_time = time.time()
-duration = 86400  # 24 hours
-# duration = 60
+# duration = 86400  # 24 hours
+duration = 30
 
 uri = "wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post"
 
