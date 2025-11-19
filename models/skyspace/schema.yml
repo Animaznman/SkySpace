@@ -1,0 +1,17 @@
+
+version: 2
+
+models:
+    - name: stage_users
+      description: "A starter dbt model"
+      columns:
+          - name: did
+            description: "User primary identifier"
+            tests:
+                - unique
+                - not_null
+          - name: username
+            description: "User's customized name"
+            tests:
+                - unique
+                - not_null
