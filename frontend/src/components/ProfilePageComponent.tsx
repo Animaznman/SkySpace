@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { User, Page, Post } from '@/lib/bigquery'
 import { BlueskyProfile, BlueskyFollower, BlueskyAPI } from '@/lib/bluesky'
 import ThemeUtils from '@/lib/theme-utils'
@@ -16,6 +18,8 @@ interface ProfilePageComponentProps {
 
 export function ProfilePageComponent({ userData, pageData, did }: ProfilePageComponentProps) {
   const { theme, setTheme } = useTheme()
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPageData, setCurrentPageData] = useState<Page>(pageData)
@@ -24,6 +28,38 @@ export function ProfilePageComponent({ userData, pageData, did }: ProfilePageCom
   const [blueskyProfile, setBlueskyProfile] = useState<BlueskyProfile | null>(null)
   const [followers, setFollowers] = useState<BlueskyFollower[]>([])
   const [profileLoading, setProfileLoading] = useState(true)
+  
+  // Check if the logged-in user owns this profile
+  // Wait for auth to finish loading before checking
+  // Normalize DIDs by trimming whitespace, decoding URL encoding, and lowercasing for comparison
+  const normalizeDid = (did: string | undefined) => {
+    if (!did) return undefined
+    try {
+      // Decode URL encoding (e.g., %3A -> :)
+      const decoded = decodeURIComponent(did)
+      return decoded.trim().toLowerCase()
+    } catch {
+      // If decoding fails, just trim and lowercase
+      return did.trim().toLowerCase()
+    }
+  }
+  const canEdit = !authLoading && isAuthenticated && normalizeDid(user?.did) === normalizeDid(did)
+
+  // Debug logging (remove in production)
+  useEffect(() => {
+    if (!authLoading) {
+      console.log('Auth Debug:', {
+        authLoading,
+        isAuthenticated,
+        userDid: user?.did,
+        profileDid: did,
+        normalizedUserDid: normalizeDid(user?.did),
+        normalizedProfileDid: normalizeDid(did),
+        canEdit,
+        match: normalizeDid(user?.did) === normalizeDid(did)
+      })
+    }
+  }, [authLoading, isAuthenticated, user?.did, did, canEdit])
 
   useEffect(() => {
     if (theme) {
@@ -149,34 +185,68 @@ export function ProfilePageComponent({ userData, pageData, did }: ProfilePageCom
                 </div>
               </div>
               
-              {/* Edit buttons */}
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowEditPageModal(true)}
-                  className="theme-button px-4 py-2 rounded-full"
-                  style={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
-                    color: 'white',
-                    fontSize: 'var(--theme-font-size-medium)',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  ⚙️ Edit Page Settings
-                </button>
-                <button
-                  onClick={() => setShowEditThemeModal(true)}
-                  className="theme-button px-4 py-2 rounded-full"
-                  style={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
-                    color: 'white',
-                    fontSize: 'var(--theme-font-size-medium)',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  🎨 AI Theme Generator
-                </button>
+              {/* Auth buttons */}
+              <div className="flex gap-3 mt-6 items-center">
+                {canEdit ? (
+                  <>
+                    <button
+                      onClick={() => setShowEditPageModal(true)}
+                      className="theme-button px-4 py-2 rounded-full"
+                      style={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                        color: 'white',
+                        fontSize: 'var(--theme-font-size-medium)',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                    >
+                      ⚙️ Edit Page Settings
+                    </button>
+                    <button
+                      onClick={() => setShowEditThemeModal(true)}
+                      className="theme-button px-4 py-2 rounded-full"
+                      style={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                        color: 'white',
+                        fontSize: 'var(--theme-font-size-medium)',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                    >
+                      🎨 AI Theme Generator
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await logout()
+                        router.push('/')
+                      }}
+                      className="theme-button px-4 py-2 rounded-full"
+                      style={{ 
+                        backgroundColor: 'rgba(239, 68, 68, 0.3)', 
+                        color: 'white',
+                        fontSize: 'var(--theme-font-size-medium)',
+                        border: '2px solid rgba(239, 68, 68, 0.5)',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                    >
+                      🚪 Logout
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => router.push('/login')}
+                    className="theme-button px-4 py-2 rounded-full"
+                    style={{ 
+                      backgroundColor: 'rgba(59, 130, 246, 0.3)', 
+                      color: 'white',
+                      fontSize: 'var(--theme-font-size-medium)',
+                      border: '2px solid rgba(59, 130, 246, 0.5)',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  >
+                    🔐 Login to Edit
+                  </button>
+                )}
               </div>
             </div>
           )}

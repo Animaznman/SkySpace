@@ -8,7 +8,9 @@ import { Page, User } from '@/lib/bigquery'
 
 export default function ProfilePage() {
   const params = useParams()
-  const did = params.did as string
+  // Decode URL-encoded DID (e.g., did%3Aplc%3A... -> did:plc:...)
+  const rawDid = params.did as string
+  const did = rawDid ? decodeURIComponent(rawDid) : ''
   const [pageData, setPageData] = useState<Page | null>(null)
   const [userData, setUserData] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)

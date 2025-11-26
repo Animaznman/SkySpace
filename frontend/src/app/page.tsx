@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function HomePage() {
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { user, logout, isAuthenticated } = useAuth()
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,10 +45,51 @@ export default function HomePage() {
       <div className="home-container">
         <div className="home-hero">
           <div className="logo-container">
-            <h1 className="skyspace-logo">
-              <span className="logo-sky">Sky</span>
-              <span className="logo-space">Space</span>
-            </h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1rem' }}>
+              <h1 className="skyspace-logo">
+                <span className="logo-sky">Sky</span>
+                <span className="logo-space">Space</span>
+              </h1>
+              {isAuthenticated ? (
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <span style={{ color: 'white', fontSize: '0.9rem' }}>
+                    Logged in as: {user?.username}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      await logout()
+                      router.push('/')
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                      color: 'white',
+                      border: '2px solid rgba(239, 68, 68, 0.5)',
+                      borderRadius: '9999px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => router.push('/login')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                    color: 'white',
+                    border: '2px solid rgba(59, 130, 246, 0.5)',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Login
+                </button>
+              )}
+            </div>
             <p className="tagline">Your MySpace for the AT Protocol era</p>
           </div>
           

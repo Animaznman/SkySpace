@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser, updateUser } from '@/lib/bigquery'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
@@ -30,6 +31,17 @@ export async function PUT(
   { params }: { params: { userId: string } }
 ) {
   try {
+    // Check authentication
+    const authenticatedDid = await requireAuth()
+    
+    // Ensure user can only update their own profile
+    if (authenticatedDid !== params.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You can only update your own profile' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     
     // Validate required fields
@@ -55,7 +67,13 @@ export async function PUT(
     const updatedUser = await getUser(params.userId)
     
     return NextResponse.json(updatedUser)
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
     console.error('API Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
