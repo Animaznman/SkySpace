@@ -84,8 +84,8 @@ export function EditThemeModal({ isOpen, onClose, pageData, did, onSave, preview
         },
         body: JSON.stringify({
           pageId: pageData.page_id,
-          current_theme: generatedTheme,
-          previous_theme: pageData.current_theme
+          current_theme: generatedTheme
+          // previous_theme is automatically set by the API (SCD pattern)
         })
       })
 

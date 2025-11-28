@@ -51,14 +51,41 @@ export async function PUT(
       )
     }
     
-    // Validate required fields
-    const allowedFields = ['current_theme', 'previous_theme']
+    // Get current page data to implement Slowly Changing Dimensions (SCD)
+    const currentPage = await getUserPage(params.did)
+    if (!currentPage) {
+      return NextResponse.json(
+        { error: 'Page not found' },
+        { status: 404 }
+      )
+    }
+    
+    // Prepare update data with Slowly Changing Dimensions (SCD) logic
+    // When current_theme changes, automatically move old current_theme to previous_theme
     const updateData: Record<string, any> = {}
     
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
+    // If updating current_theme, implement SCD pattern
+    if (body.current_theme !== undefined) {
+      updateData.current_theme = body.current_theme
+      
+      // Check if current_theme is actually changing (compare JSON strings)
+      const currentThemeStr = JSON.stringify(currentPage.current_theme)
+      const newThemeStr = JSON.stringify(body.current_theme)
+      const themeIsChanging = currentThemeStr !== newThemeStr
+      
+      // Only update previous_theme if:
+      // 1. The theme is actually changing, AND
+      // 2. previous_theme is not explicitly provided (to allow manual overrides)
+      if (themeIsChanging && body.previous_theme === undefined) {
+        // Move current theme to previous_theme (SCD pattern)
+        updateData.previous_theme = currentPage.current_theme
+      } else if (body.previous_theme !== undefined) {
+        // Allow explicit previous_theme override
+        updateData.previous_theme = body.previous_theme
       }
+    } else if (body.previous_theme !== undefined) {
+      // Allow updating previous_theme independently if needed
+      updateData.previous_theme = body.previous_theme
     }
     
     if (Object.keys(updateData).length === 0) {

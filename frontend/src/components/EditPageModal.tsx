@@ -65,8 +65,8 @@ export function EditPageModal({ isOpen, onClose, pageData, did, onSave, previewC
         },
         body: JSON.stringify({
           pageId: pageData.page_id,
-          current_theme: themeToSave,
-          previous_theme: pageData.current_theme
+          current_theme: themeToSave
+          // previous_theme is automatically set by the API (SCD pattern)
         })
       })
 
@@ -85,7 +85,8 @@ export function EditPageModal({ isOpen, onClose, pageData, did, onSave, previewC
       }
     } catch (error) {
       console.error('Failed to save page:', error)
-      alert(`Failed to save changes: ${error.message}. Please try again.`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to save changes: ${errorMessage}. Please try again.`)
     } finally {
       setSaving(false)
     }

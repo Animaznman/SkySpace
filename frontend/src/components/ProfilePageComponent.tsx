@@ -109,6 +109,42 @@ export function ProfilePageComponent({ userData, pageData, did }: ProfilePageCom
     setCurrentPageData(updatedPage)
   }
 
+  const handleRevertTheme = async () => {
+    if (!currentPageData.previous_theme) {
+      alert('No previous theme to revert to')
+      return
+    }
+
+    try {
+      // Swap current_theme and previous_theme
+      const response = await fetch(`/api/pages/${did}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pageId: currentPageData.page_id,
+          current_theme: currentPageData.previous_theme,
+          previous_theme: currentPageData.current_theme
+        })
+      })
+
+      if (response.ok) {
+        const updatedPage = await response.json()
+        setCurrentPageData(updatedPage)
+        setTheme(updatedPage.current_theme)
+        alert('Theme reverted successfully!')
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Failed to revert theme: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('Failed to revert theme:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to revert theme: ${errorMessage}. Please try again.`)
+    }
+  }
+
 
   return (
     <>
@@ -215,6 +251,22 @@ export function ProfilePageComponent({ userData, pageData, did }: ProfilePageCom
                     >
                       🎨 AI Theme Generator
                     </button>
+                    {currentPageData.previous_theme && (
+                      <button
+                        onClick={handleRevertTheme}
+                        className="theme-button px-4 py-2 rounded-full"
+                        style={{ 
+                          backgroundColor: 'rgba(251, 191, 36, 0.3)', 
+                          color: 'white',
+                          fontSize: 'var(--theme-font-size-medium)',
+                          border: '2px solid rgba(251, 191, 36, 0.5)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        title="Revert to previous theme"
+                      >
+                        ↶ Revert Theme
+                      </button>
+                    )}
                     <button
                       onClick={async () => {
                         await logout()
